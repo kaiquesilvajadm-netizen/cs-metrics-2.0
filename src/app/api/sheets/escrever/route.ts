@@ -19,11 +19,12 @@ function getAuth() {
 
 export async function POST(request: Request) {
   try {
-    const { nomeDisplay, senha, mes, linhasDashboard } = (await request.json()) as {
+    const { nomeDisplay, senha, mes, linhasDashboard, forcar = false } = (await request.json()) as {
       nomeDisplay: string
       senha: string
       mes: number
       linhasDashboard: LinhaDashboard[]
+      forcar?: boolean
     }
 
     // ── 1. Validar credenciais ───────────────────────────────────────────────
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
     // Mensal   → INSERE (sobrescreve valor não-fórmula)
     const updates: Array<{ range: string; values: [[number]] }> = []
     const celulasUsadas = new Set<string>()
+    const linhasComDadosExistentes: number[] = []
 
     for (const linha of linhasDashboard) {
       for (const metrica of linha.metricas) {
@@ -100,6 +102,9 @@ export async function POST(request: Request) {
         const ehSemanal = ROTULOS_SEMANAL.has(metrica.rotulo)
         const valorAtual = valoresAtuais[linhaIdx] ?? 0
 
+        // Rastrear células que já têm dados para aviso de duplicata
+        if (valorAtual !== 0) linhasComDadosExistentes.push(linhaIdx)
+
         // Semanal: soma | Mensal: insere direto
         const novoValor = ehSemanal ? valorAtual + metrica.valor : metrica.valor
 
@@ -109,6 +114,16 @@ export async function POST(request: Request) {
 
     if (updates.length === 0) {
       return NextResponse.json({ ok: true, atualizadas: 0, aba })
+    }
+
+    // ── 7b. Aviso de dados já existentes (sem forcar) ────────────────────────
+    if (!forcar && linhasComDadosExistentes.length > 0) {
+      return NextResponse.json({
+        aviso: true,
+        celulasExistentes: linhasComDadosExistentes.length,
+        total: updates.length,
+        aba,
+      })
     }
 
     // ── 8. Escrever em batch ──────────────────────────────────────────────────

@@ -10,9 +10,9 @@ interface Props {
   onFechar: () => void
 }
 
-type Estado = 'idle' | 'enviando' | 'ok' | 'erro'
+type Estado = 'idle' | 'enviando' | 'ok' | 'erro' | 'aviso'
 
-const mesAtual = new Date().getMonth() + 1 // 1-12
+const mesAtual = new Date().getMonth() + 1
 
 export default function ModalExportar({ linhasDashboard, onFechar }: Props) {
   const [nomeDisplay, setNomeDisplay] = useState('')
@@ -20,19 +20,16 @@ export default function ModalExportar({ linhasDashboard, onFechar }: Props) {
   const [mes, setMes] = useState(mesAtual)
   const [estado, setEstado] = useState<Estado>('idle')
   const [detalhe, setDetalhe] = useState('')
+  const [avisoInfo, setAvisoInfo] = useState<{ celulasExistentes: number; total: number; aba: string } | null>(null)
 
-  async function handleEnviar(e: React.FormEvent) {
-    e.preventDefault()
-    if (!nomeDisplay) { setDetalhe('Selecione seu nome.'); setEstado('erro'); return }
-    if (!senha)       { setDetalhe('Digite a senha.');    setEstado('erro'); return }
-
+  async function enviar(forcar = false) {
     setEstado('enviando')
     setDetalhe('')
 
     const res = await fetch('/api/sheets/escrever', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nomeDisplay, senha, mes, linhasDashboard }),
+      body: JSON.stringify({ nomeDisplay, senha, mes, linhasDashboard, forcar }),
     })
 
     const data = await res.json()
@@ -40,20 +37,36 @@ export default function ModalExportar({ linhasDashboard, onFechar }: Props) {
     if (!res.ok) {
       setEstado('erro')
       setDetalhe(data.erro ?? 'Falha ao enviar.')
-    } else {
-      setEstado('ok')
-      setDetalhe(`${data.atualizadas} célula${data.atualizadas !== 1 ? 's' : ''} atualizada${data.atualizadas !== 1 ? 's' : ''} na aba "${data.aba}".`)
+      return
     }
+
+    if (data.aviso) {
+      setAvisoInfo({ celulasExistentes: data.celulasExistentes, total: data.total, aba: data.aba })
+      setEstado('aviso')
+      return
+    }
+
+    setEstado('ok')
+    setDetalhe(`${data.atualizadas} célula${data.atualizadas !== 1 ? 's' : ''} atualizada${data.atualizadas !== 1 ? 's' : ''} na aba "${data.aba}".`)
   }
+
+  function handleEnviar(e: React.FormEvent) {
+    e.preventDefault()
+    if (!nomeDisplay) { setDetalhe('Selecione seu nome.'); setEstado('erro'); return }
+    if (!senha)       { setDetalhe('Digite a senha.');    setEstado('erro'); return }
+    enviar(false)
+  }
+
+  const nomeMes = NOMES_MESES[mes - 1]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-        {estado === 'ok' ? (
+
+        {/* ── Sucesso ── */}
+        {estado === 'ok' && (
           <div className="flex flex-col items-center gap-4 py-4 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl">
-              ✅
-            </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl">✅</div>
             <p className="text-sm font-medium text-slate-800">{detalhe}</p>
             <button
               type="button"
@@ -63,7 +76,43 @@ export default function ModalExportar({ linhasDashboard, onFechar }: Props) {
               Fechar
             </button>
           </div>
-        ) : (
+        )}
+
+        {/* ── Aviso de dados existentes ── */}
+        {estado === 'aviso' && avisoInfo && (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start gap-3 rounded-xl bg-amber-50 p-4">
+              <span className="text-2xl">⚠️</span>
+              <div>
+                <p className="text-sm font-semibold text-amber-800">Dados já existentes em {nomeMes}</p>
+                <p className="mt-1 text-xs text-amber-700">
+                  {avisoInfo.celulasExistentes} de {avisoInfo.total} métricas já possuem valores na aba <strong>{avisoInfo.aba}</strong> para este mês.
+                  As métricas semanais serão <strong>somadas</strong> e as mensais serão <strong>substituídas</strong>.
+                </p>
+                <p className="mt-2 text-xs text-amber-700 font-medium">Deseja prosseguir mesmo assim?</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setEstado('idle'); setAvisoInfo(null) }}
+                className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => enviar(true)}
+                className="flex-1 rounded-lg bg-amber-500 py-2.5 text-sm font-semibold text-white hover:bg-amber-600"
+              >
+                Sim, prosseguir
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Formulário ── */}
+        {(estado === 'idle' || estado === 'enviando' || estado === 'erro') && (
           <>
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-base font-semibold text-slate-900">Exportar para Planilha</h2>
@@ -76,7 +125,7 @@ export default function ModalExportar({ linhasDashboard, onFechar }: Props) {
               </button>
             </div>
 
-            <form onSubmit={handleEnviar} className="flex flex-col gap-4">
+            <form onSubmit={handleEnviar} className="flex flex-col gap-4" autoComplete="off">
               {/* Nome */}
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-700">Seu nome</label>
@@ -102,6 +151,7 @@ export default function ModalExportar({ linhasDashboard, onFechar }: Props) {
                   value={senha}
                   onChange={(e) => { setSenha(e.target.value); setEstado('idle'); setDetalhe('') }}
                   placeholder="ADVBOX****"
+                  autoComplete="new-password"
                   className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
                 />
               </div>
@@ -131,11 +181,12 @@ export default function ModalExportar({ linhasDashboard, onFechar }: Props) {
                 disabled={estado === 'enviando'}
                 className="rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
               >
-                {estado === 'enviando' ? 'Enviando...' : '📤 Confirmar Exportação'}
+                {estado === 'enviando' ? 'Verificando...' : '📤 Confirmar Exportação'}
               </button>
             </form>
           </>
         )}
+
       </div>
     </div>
   )
