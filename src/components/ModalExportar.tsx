@@ -152,6 +152,8 @@ export default function ModalExportar({ linhasDashboard, onFechar }: Props) {
                   onChange={(e) => { setSenha(e.target.value); setEstado('idle'); setDetalhe('') }}
                   placeholder="ADVBOX****"
                   autoComplete="new-password"
+                  data-lpignore="true"
+                  data-form-type="other"
                   className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
                 />
               </div>

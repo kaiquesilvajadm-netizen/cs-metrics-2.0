@@ -14,7 +14,7 @@ export default function DashboardMetricas({ linhas, ocultarNome = false }: Props
   if (linhas.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">
-        Nenhum dado ainda. Envie uma planilha ou preencha o formulário acima.
+        Nenhum dado ainda. Envie uma planilha para prosseguir.
       </div>
     )
   }
