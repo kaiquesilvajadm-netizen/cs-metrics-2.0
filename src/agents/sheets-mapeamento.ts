@@ -1,7 +1,7 @@
-// Mapa: rótulo da métrica no app → label na coluna A da planilha operacional.
-// Remove o prefixo "↓ " que a planilha usa para sub-itens antes de comparar.
+// Mapa: rótulo da métrica no app → label exato na coluna A da planilha operacional.
+// A normalização remove "  ↳ " no início (sub-itens da planilha) antes de comparar.
 export const MAPEAMENTO_METRICAS: Record<string, string> = {
-  // ── CHURN (Planilha King) ─────────────────────────────────────────────────
+  // ── RETENÇÃO & CHURN (Planilha King) ─────────────────────────────────────
   'Nº Churns Registrados':               'Nº Churns Registrados',
   'RRM Churn Nominal (R$)':              'RRM Churn Nominal (R$)',
   'Life Time Médio dos Churns (meses)':  'Life Time Médio dos Churns (meses)',
@@ -9,30 +9,31 @@ export const MAPEAMENTO_METRICAS: Record<string, string> = {
   'Churns pós 7º Pagamento — LTV (R$)': 'Churns pós 7º Pagamento — LTV (R$)',
 
   // ── CHURN via Tarefas ─────────────────────────────────────────────────────
-  'Churns Resgatados':       'Churns Resgatados',
-  'Inadimplentes Resgatados':'Inadimplentes Resgatados',
+  'Churns Resgatados':        'Churns Resgatados',
+  'Inadimplentes Resgatados': 'Inadimplentes Resgatados',
 
   // ── ENGAJAMENTO & COBERTURA (Planilha Tarefas) ───────────────────────────
-  'Reunião de Implantação Elite':          'Reunião de Implantação Elite',
-  'Reunião de Kick-Off':                   'Reunião de Kick-Off',
-  'Reunião de Engajamento':                'Reunião de Engajamento',
-  'Reunião de Pipe de Risco':              'Reunião de Pipe de Risco',
-  'Reunião de IA & Automações':            'Reunião de IA & Automações',
-  'Diagnóstico Radar':                     'Diagnóstico Radar',
-  'Outras Reuniões de Cultivação':         'Outras Reuniões de Cultivação',
-  'Reuniões Remarcadas / Canceladas':      'Reuniões Remarcadas / Canceladas',
-  'Agendamentos Tentados':                 'Agendamentos Tentados',
+  // Sub-itens têm "  ↳ " na planilha — a normalização remove esse prefixo
+  'Reunião de Implantação Elite':        '  ↳ Reunião de Implantação Elite',
+  'Reunião de Kick-Off':                 '  ↳ Reunião de Kick-Off',
+  'Reunião de Engajamento':              '  ↳ Reunião de Engajamento',
+  'Reunião de Pipe de Risco':            '  ↳ Reunião de Pipe de Risco',
+  'Reunião de IA & Automações':          '  ↳ Reunião de IA & Automações',
+  'Diagnóstico Radar':                   '  ↳ Diagnóstico Radar',
+  'Outras Reuniões de Cultivação':       '  ↳ Outras Reuniões de Cultivação',
+  'Reuniões Remarcadas / Canceladas':    'Reuniões Remarcadas / Canceladas',
   'Revisões de Contas (Checklist s/ reunião)': 'Revisões de Contas (Checklist s/ reunião)',
 
-  // ── OPORTUNIDADES ─────────────────────────────────────────────────────────
-  'Upgrades de Plano':                          'Upgrades de Plano',
-  'Cross-Sell (Consultorias / BigBoss)':        'Cross-Sell (Consultorias / BigBoss)',
-  'Oportunidade de IA (Justine/Dona/Flowter)':  'Oportunidade de IA (Justine/Dona/Flowter)',
-  'Oportunidade de API (pagas)':                'Oportunidade de API (pagas)',
-  'Eventos / Comunidade / Parceiros':           'Eventos / Comunidade / Parceiros',
-  'Fechamentos de Ops no Mês':                  'Fechamentos de Ops no Mês',
+  // ── OPORTUNIDADES & EXPANSÃO ──────────────────────────────────────────────
+  // Atenção: a planilha usa plural "Oportunidades" (vs singular no app)
+  'Upgrades de Plano':                              '  ↳ Upgrades de Plano',
+  'Cross-Sell (Consultorias / BigBoss)':            '  ↳ Cross-Sell (Consultorias / BigBoss)',
+  'Oportunidade de IA (Justine/Dona/Flowter)':      '  ↳ Oportunidades de IA (Justine/Dona/Flowter)',
+  'Oportunidade de API (pagas)':                    '  ↳ Oportunidades de API (pagas)',
+  'Eventos / Comunidade / Parceiros':               '  ↳ Eventos / Comunidade / Parceiros',
+  'Fechamentos de Ops no Mês':                      'Fechamentos de Ops no Mês',
 
-  // ── KING Carteira ─────────────────────────────────────────────────────────
+  // ── SAÚDE DA CARTEIRA (Planilha King Carteira) ───────────────────────────
   'Nº Total de Contas na Carteira': 'Nº Total de Contas na Carteira',
   'Contas Excellent':               'Contas Excellent',
   'Contas Good':                    'Contas Good',
@@ -41,8 +42,7 @@ export const MAPEAMENTO_METRICAS: Record<string, string> = {
   'MRR Total da Carteira (R$)':     'MRR Total da Carteira (R$)',
 }
 
-// Normaliza o texto de uma célula da coluna A para comparação:
-// remove "↓ " ou "↓" no início, trim, e lowercase.
+// Normaliza label da coluna A: remove prefixo "  ↳ " (ou variações), trim, lowercase.
 export function normalizarLabel(texto: string): string {
-  return texto.replace(/^↓\s*/u, '').trim().toLowerCase()
+  return texto.replace(/^\s*↳\s*/u, '').trim().toLowerCase()
 }

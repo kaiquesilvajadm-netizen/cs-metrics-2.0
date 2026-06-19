@@ -1,6 +1,7 @@
 // Mapa mês (1-12) → letra da coluna na planilha operacional.
-// Ajuste as letras conforme o cabeçalho real da sua planilha.
-// Padrão assumido: A=Nome, B=Frequência, C=Janeiro … N=Dezembro, O=Total
+// Confirmado lendo a linha 4 da aba Amanda:
+// A=MÉTRICA, B=FREQ., C=JAN, D=FEV, E=MAR, F=ABR, G=MAI, H=JUN,
+// I=JUL, J=AGO, K=SET, L=OUT, M=NOV, N=DEZ, O=TOTAL/MÉD
 export const MESES_COLUNAS: Record<number, string> = {
   1:  'C',  // Janeiro
   2:  'D',  // Fevereiro
