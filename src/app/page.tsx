@@ -5,6 +5,9 @@ import Cabecalho from '@/components/Cabecalho'
 import UploadPlanilha from '@/components/UploadPlanilha'
 import DashboardMetricas from '@/components/DashboardMetricas'
 import ModalSelecionarColaborador from '@/components/ModalSelecionarColaborador'
+import TelaLogin from '@/components/TelaLogin'
+import BotaoExportar from '@/components/BotaoExportar'
+import { useAuth } from '@/contexts/AuthContext'
 import { importarPlanilha } from '@/agents/importacao'
 import { limparTabela } from '@/agents/limpeza'
 import { calcularMetricasTarefas, detectarPeriodoTarefas } from '@/agents/metricas-tarefas'
@@ -55,6 +58,14 @@ function tarefasVazio(): EstadoTarefas {
 }
 
 export default function Home() {
+  const { sessao, logout } = useAuth()
+
+  if (!sessao) return <TelaLogin />
+
+  return <AppPrincipal sessaoNome={sessao.nomeExibicao} sessaoAba={sessao.abaSheet} onLogout={logout} />
+}
+
+function AppPrincipal({ sessaoNome, sessaoAba, onLogout }: { sessaoNome: string; sessaoAba: string; onLogout: () => void }) {
   const [funcaoAtiva, setFuncaoAtiva] = useState<FuncaoId>('churn')
   const [churn, setChurn] = useState<EstadoChurn>(churnVazio)
   const [king, setKing] = useState<EstadoKing>(kingVazio)
@@ -144,6 +155,8 @@ export default function Home() {
           funcaoAtiva={funcaoAtiva}
           funcoes={FUNCOES}
           onMudarFuncao={(id) => setFuncaoAtiva(id as FuncaoId)}
+          usuarioLogado={sessaoNome}
+          onLogout={onLogout}
         />
 
         {/* ── ABA CHURN ────────────────────────────────────────────────── */}
@@ -205,9 +218,12 @@ export default function Home() {
             )}
 
             {linhasChurn.length > 0 && (
-              <span className="mt-6 inline-block rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
-                📋 RELATÓRIO CHURN
-              </span>
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+                <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
+                  📋 RELATÓRIO CHURN
+                </span>
+                <BotaoExportar aba={sessaoAba} linhasDashboard={linhasChurn} />
+              </div>
             )}
             <div className="mt-4">
               <DashboardMetricas linhas={linhasChurn} ocultarNome={false} />
@@ -258,9 +274,12 @@ export default function Home() {
             )}
 
             {linhasKing.length > 0 && (
-              <span className="mt-6 inline-block rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
-                📋 RELATÓRIO KING
-              </span>
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+                <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
+                  📋 RELATÓRIO KING
+                </span>
+                <BotaoExportar aba={sessaoAba} linhasDashboard={linhasKing} />
+              </div>
             )}
             <div className="mt-4">
               <DashboardMetricas linhas={linhasKing} ocultarNome={true} />
@@ -352,9 +371,12 @@ export default function Home() {
             )}
 
             {linhasTarefas.length > 0 && (
-              <span className="mt-6 inline-block rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
-                📋 RELATÓRIO TAREFAS · {tarefas.modo === 'mensal' ? 'MENSAL' : 'SEMANAL'}
-              </span>
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+                <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
+                  📋 RELATÓRIO TAREFAS · {tarefas.modo === 'mensal' ? 'MENSAL' : 'SEMANAL'}
+                </span>
+                <BotaoExportar aba={sessaoAba} linhasDashboard={linhasTarefas} />
+              </div>
             )}
             <div className="mt-4">
               <DashboardMetricas linhas={linhasTarefas} ocultarNome={true} />
