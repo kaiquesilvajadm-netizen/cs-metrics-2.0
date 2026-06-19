@@ -125,21 +125,25 @@ export default function ModalExportar({ linhasDashboard, onFechar }: Props) {
               </button>
             </div>
 
-            <form onSubmit={handleEnviar} className="flex flex-col gap-4" autoComplete="off">
+            <form onSubmit={handleEnviar} className="flex flex-col gap-4">
               {/* Nome */}
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-700">Seu nome</label>
+                {/* Input oculto para o browser associar o "usuário" ao salvamento de senha */}
+                <input type="text" name="username" autoComplete="username" value={nomeDisplay} onChange={() => {}} className="hidden" />
                 <select
                   value={nomeDisplay}
                   onChange={(e) => { setNomeDisplay(e.target.value); setEstado('idle'); setDetalhe('') }}
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
                 >
                   <option value="">Selecione...</option>
-                  {COLABORADORES.map((c) => (
-                    <option key={c.nomeDisplay} value={c.nomeDisplay}>
-                      {c.nomeDisplay}
-                    </option>
-                  ))}
+                  {[...COLABORADORES]
+                    .sort((a, b) => a.nomeDisplay.localeCompare(b.nomeDisplay, 'pt-BR'))
+                    .map((c) => (
+                      <option key={c.nomeDisplay} value={c.nomeDisplay}>
+                        {c.nomeDisplay}
+                      </option>
+                    ))}
                 </select>
               </div>
 
@@ -148,12 +152,11 @@ export default function ModalExportar({ linhasDashboard, onFechar }: Props) {
                 <label className="mb-1 block text-xs font-medium text-slate-700">Senha</label>
                 <input
                   type="password"
+                  name="password"
                   value={senha}
                   onChange={(e) => { setSenha(e.target.value); setEstado('idle'); setDetalhe('') }}
                   placeholder="ADVBOX****"
-                  autoComplete="new-password"
-                  data-lpignore="true"
-                  data-form-type="other"
+                  autoComplete="current-password"
                   className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
                 />
               </div>
