@@ -101,7 +101,7 @@ export default function DashboardMetricas({ linhas, ocultarNome = false }: Props
                           <p className="mb-1.5 text-xs font-medium uppercase text-slate-500">
                             Tarefas contabilizadas:
                           </p>
-                          <ul className="space-y-1">
+                          <ul className="max-h-48 space-y-1 overflow-y-auto pr-1">
                             {metrica.fontes.map((fonte) => (
                               <li
                                 key={fonte}
