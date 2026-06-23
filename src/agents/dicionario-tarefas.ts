@@ -62,7 +62,7 @@ export const METRICAS_REUNIAO: DefinicaoMetricaContagem[] = [
 export const METRICA_REMARCADAS: DefinicaoMetricaContagem = {
   rotulo: 'Reuniões Remarcadas / Canceladas',
   icone: '🔁',
-  compromissos: ['CS REMARCAR REUNIAO CULTIVACAO'],
+  compromissos: ['CS REMARCAR REUNIAO CULTIVACAO', 'CS REMARCAR REUNIAO CONSULTORIA'],
 }
 
 export const METRICA_AGENDAMENTOS_TENTADOS: DefinicaoMetricaContagem = {
