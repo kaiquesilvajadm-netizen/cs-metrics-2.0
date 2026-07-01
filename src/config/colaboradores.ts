@@ -19,9 +19,10 @@ export const COLABORADORES: ColaboradorConfig[] = [
   { nomeDisplay: 'Júlia Andalecio',  nomeCompleto: 'JÚLIA ANDALECIO LEMES',                abaSheet: 'Julia',          senha: 'ADVBOX3505' },
   // ── Aba: Laísa ────────────────────────────────────────────────────────────
   { nomeDisplay: 'Laísa Nunes',      nomeCompleto: 'LAÍSA NUNES DA CUNHA',                 abaSheet: 'Laísa',          senha: 'ADVBOX3606' },
-  // ── Aba: Luana e Tércio ───────────────────────────────────────────────────
-  { nomeDisplay: 'Luana Siqueira',   nomeCompleto: 'LUANA SIQUEIRA DA SILVA',              abaSheet: 'Luana e Tércio', senha: 'ADVBOX3707' },
-  { nomeDisplay: 'Tércio Strutzel',  nomeCompleto: 'TERCIO STRUTZEL CORONADO',             abaSheet: 'Luana e Tércio', senha: 'ADVBOX3707' },
+  // ── Aba: Luana ────────────────────────────────────────────────────────────
+  { nomeDisplay: 'Luana Siqueira',   nomeCompleto: 'LUANA SIQUEIRA DA SILVA',              abaSheet: 'Luana',    senha: 'ADVBOX3707' },
+  // ── Aba: Tércio ───────────────────────────────────────────────────────────
+  { nomeDisplay: 'Tércio Strutzel',  nomeCompleto: 'TERCIO STRUTZEL CORONADO',             abaSheet: 'Tércio ', senha: 'ADVBOX4411' },
   // ── Aba: Mari ─────────────────────────────────────────────────────────────
   { nomeDisplay: 'Mariana Nunes',    nomeCompleto: 'MARIANA NUNES DE SANTANA',             abaSheet: 'Mari',           senha: 'ADVBOX3808' },
   // ── Aba: Pedro e Paulo ────────────────────────────────────────────────────
