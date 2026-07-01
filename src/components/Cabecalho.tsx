@@ -20,6 +20,7 @@ export default function Cabecalho({ funcaoAtiva, funcoes, onMudarFuncao, usuario
         <span className="text-xs tracking-wide text-slate-400">
           PAINEL GERENCIAL · MÉTRICAS CULTIVAÇÃO
         </span>
+        <span className="text-[10px] text-slate-600 select-none">v2.14</span>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
