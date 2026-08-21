@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { requisicaoAutenticada } from '@/agents/gerencial/sessao'
 import { abasUnicas } from '@/agents/gerencial/leitura-abas'
-import { lerMesesFechados, lerMetasPeriodo } from '@/agents/gerencial/planilha-gerencial'
+import { lerMesesFechados, resolverMetasDoPeriodo, type Trimestre } from '@/agents/gerencial/planilha-gerencial'
 import { agregarPeriodo } from '@/agents/gerencial/agregador-trimestral'
 
 const PERIODOS: Record<string, number[]> = {
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     }
     const mesesFechados = meses.filter((mes) => (contagemPorMes.get(mes) ?? 0) >= totalAbas)
 
-    const metasPeriodo = await lerMetasPeriodo(mesesFechados.length > 0 ? mesesFechados : meses)
+    const metasPeriodo = await resolverMetasDoPeriodo(periodo as Trimestre | 'ano', mesesFechados.length > 0 ? mesesFechados : meses)
     const resultado = agregarPeriodo(meses, ano, mesesFechados, dadosPorAbaEMes, metasPeriodo)
     return NextResponse.json(resultado)
   } catch (err) {

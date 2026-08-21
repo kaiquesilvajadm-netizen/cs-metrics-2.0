@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { requisicaoAutenticada } from '@/agents/gerencial/sessao'
 import { obterDadosDoMes } from '@/agents/gerencial/resolver-mes'
 import { agregarTime } from '@/agents/gerencial/agregador-time'
-import { lerMetas } from '@/agents/gerencial/planilha-gerencial'
+import { resolverMetasDoMes } from '@/agents/gerencial/planilha-gerencial'
 
 export async function GET(request: NextRequest) {
   if (!requisicaoAutenticada(request)) {
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [{ oficial, aviso, porAba }, metas] = await Promise.all([obterDadosDoMes(mes, ano), lerMetas(mes)])
+    const [{ oficial, aviso, porAba }, metas] = await Promise.all([obterDadosDoMes(mes, ano), resolverMetasDoMes(mes)])
     const resultado = agregarTime(mes, ano, porAba, metas)
     return NextResponse.json({ oficial, aviso, ...resultado })
   } catch (err) {

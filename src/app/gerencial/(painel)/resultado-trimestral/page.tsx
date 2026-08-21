@@ -78,12 +78,10 @@ export default function ResultadoTrimestralPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-2xl bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
-          <h2 className="text-lg font-semibold text-slate-900">🗓️ Resultado Trimestral do Time</h2>
-          <div className="flex items-center gap-3">
-            <SeletorPeriodo periodo={periodo} onMudarPeriodo={setPeriodo} />
-            <BotaoAtualizar onAtualizar={atualizar} carregando={carregando} ultimaAtualizacao={ultimaAtualizacao} />
-          </div>
+        <h2 className="text-lg font-semibold text-slate-900">🗓️ Resultado Trimestral do Time</h2>
+        <div className="mt-3 flex flex-wrap items-center gap-3 pb-4">
+          <SeletorPeriodo periodo={periodo} onMudarPeriodo={setPeriodo} />
+          <BotaoAtualizar onAtualizar={atualizar} carregando={carregando} ultimaAtualizacao={ultimaAtualizacao} />
         </div>
         <hr className="border-slate-200" />
 

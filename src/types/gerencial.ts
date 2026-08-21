@@ -27,6 +27,11 @@ export type ChaveMetrica = Exclude<keyof MetricasColaboradorMes, 'abaSheet' | 'm
 export type DirecaoMeta = 'maior_melhor' | 'menor_melhor'
 export type AgregacaoPeriodo = 'soma' | 'media' | 'ultimo_valor'
 
+// Nível em que uma meta foi configurada. O líder escolhe, ao preencher
+// Métricas Esperadas, se está definindo o alvo do mês, do trimestre ou do
+// ano — cada nível fica numa coluna própria na planilha gerencial.
+export type NivelMeta = 'mes' | 'trimestre' | 'ano'
+
 export interface DefinicaoMeta {
   chave: string
   rotulo: string

@@ -81,12 +81,10 @@ export default function ResultadoMensalPage() {
 
   return (
     <div className="rounded-2xl bg-white p-6 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
-        <h2 className="text-lg font-semibold text-slate-900">📈 Resultado Mensal do Time</h2>
-        <div className="flex items-center gap-3">
-          <SeletorMes mes={mes} onMudarMes={setMes} />
-          <BotaoAtualizar onAtualizar={atualizar} carregando={carregando} ultimaAtualizacao={ultimaAtualizacao} />
-        </div>
+      <h2 className="text-lg font-semibold text-slate-900">📈 Resultado Mensal do Time</h2>
+      <div className="mt-3 flex flex-wrap items-center gap-3 pb-4">
+        <SeletorMes mes={mes} onMudarMes={setMes} />
+        <BotaoAtualizar onAtualizar={atualizar} carregando={carregando} ultimaAtualizacao={ultimaAtualizacao} />
       </div>
       <hr className="border-slate-200" />
 

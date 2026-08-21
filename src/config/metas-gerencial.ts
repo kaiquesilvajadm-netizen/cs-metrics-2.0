@@ -1,45 +1,29 @@
 import type { AgregacaoPeriodo, ChaveMetrica, DefinicaoMeta, DirecaoMeta } from '@/types/gerencial'
 
 // Nome da aba de metas na planilha GERENCIAL (dedicada, separada da
-// operacional). Mesma estrutura de colunas de mês (A=MÉTRICA, B=vazio,
-// C-N=Jan-Dez) usada em toda a planilha operacional — reaproveita
-// MESES_COLUNAS sem nenhuma lógica nova de coluna.
+// operacional). Colunas: A=MÉTRICA, B=vazio, C-N=Jan-Dez (reaproveita
+// MESES_COLUNAS), O-R=Q1-Q4, S=ANO — o líder escolhe em que nível está
+// configurando cada meta (Mês / Trimestre / Ano).
 export const ABA_METAS = 'Metas do Time'
 export const ABA_FECHAMENTOS = 'Fechamentos Mensais'
 
-export const METAS_CONFIG: DefinicaoMeta[] = [
-  {
-    chave: 'totalContasAdvbox',
-    rotulo: 'Meta — Total de Contas na ADVBOX',
-    unidade: 'quantidade',
-    direcao: 'maior_melhor',
-    agregacaoPeriodo: 'ultimo_valor',
-  },
-  {
-    chave: 'reunioesEsperadas',
-    rotulo: 'Meta — Reuniões de Cultivação (mês)',
-    unidade: 'quantidade',
-    direcao: 'maior_melhor',
-    agregacaoPeriodo: 'soma',
-  },
-  {
-    chave: 'churnEsperadoPercentual',
-    rotulo: 'Meta — Churn (%)',
-    unidade: 'percentual',
-    direcao: 'menor_melhor',
-    agregacaoPeriodo: 'media',
-  },
-]
+export const COLUNAS_TRIMESTRE: Record<'Q1' | 'Q2' | 'Q3' | 'Q4', string> = {
+  Q1: 'O',
+  Q2: 'P',
+  Q3: 'Q',
+  Q4: 'R',
+}
+export const COLUNA_ANO = 'S'
 
-// Rótulo de exibição + ícone + relação com a meta (quando aplicável) para
-// cada métrica que o time acompanha nos Menus 3/4. `chaveMeta` liga a
-// métrica realizada à meta configurada em METAS_CONFIG — quando ausente, o
-// indicador é exibido sem comparação (não há meta definida para ele).
+// Rótulo de exibição + ícone + relação com a meta para cada métrica que o
+// time acompanha nos Menus 1/3/4. Toda métrica tem uma meta correspondente
+// (chaveMeta = chave + "Meta") — o líder decide o nível (mês/trimestre/ano)
+// na tela de Métricas Esperadas.
 export interface DefinicaoIndicador {
   chave: ChaveMetrica
   rotulo: string
   icone: string
-  chaveMeta?: string
+  chaveMeta: string
   direcao: DirecaoMeta
   // Como consolidar a métrica ao longo de vários meses (trimestre/ano):
   // 'soma' para fluxos (churns do mês, reuniões do mês, etc), 'ultimo_valor'
@@ -58,6 +42,7 @@ export const INDICADORES_TIME: DefinicaoIndicador[] = [
     chave: 'churnsRegistrados',
     rotulo: 'Nº Churns Registrados',
     icone: '📉',
+    chaveMeta: 'churnsRegistradosMeta',
     direcao: 'menor_melhor',
     agregacaoPeriodo: 'soma',
     explicacao: 'Soma da coluna "Nº Churns Registrados" de todas as abas de colaborador (valor já calculado pelo app na exportação da Planilha King).',
@@ -66,6 +51,7 @@ export const INDICADORES_TIME: DefinicaoIndicador[] = [
     chave: 'inadimplentesResgatados',
     rotulo: 'Inadimplentes Resgatados',
     icone: '💳',
+    chaveMeta: 'inadimplentesResgatadosMeta',
     direcao: 'maior_melhor',
     agregacaoPeriodo: 'soma',
     explicacao: 'Soma da coluna "Inadimplentes Resgatados" de todas as abas de colaborador.',
@@ -74,7 +60,7 @@ export const INDICADORES_TIME: DefinicaoIndicador[] = [
     chave: 'reunioesCultivacaoRealizadas',
     rotulo: 'Reuniões de Cultivação Realizadas',
     icone: '🤝',
-    chaveMeta: 'reunioesEsperadas',
+    chaveMeta: 'reunioesCultivacaoRealizadasMeta',
     direcao: 'maior_melhor',
     agregacaoPeriodo: 'soma',
     explicacao:
@@ -84,6 +70,7 @@ export const INDICADORES_TIME: DefinicaoIndicador[] = [
     chave: 'reuniaoPipeDeRisco',
     rotulo: 'Reunião de Pipe de Risco',
     icone: '⚠️',
+    chaveMeta: 'reuniaoPipeDeRiscoMeta',
     direcao: 'maior_melhor',
     agregacaoPeriodo: 'soma',
     explicacao: 'Soma da linha "↳ Reunião de Pipe de Risco" de todas as abas de colaborador.',
@@ -92,6 +79,7 @@ export const INDICADORES_TIME: DefinicaoIndicador[] = [
     chave: 'reuniaoIAeAutomacoes',
     rotulo: 'Reunião de IA & Automações',
     icone: '🤖',
+    chaveMeta: 'reuniaoIAeAutomacoesMeta',
     direcao: 'maior_melhor',
     agregacaoPeriodo: 'soma',
     explicacao: 'Soma da linha "↳ Reunião de IA & Automações" de todas as abas de colaborador.',
@@ -100,6 +88,7 @@ export const INDICADORES_TIME: DefinicaoIndicador[] = [
     chave: 'reunioesRemarcadasCanceladas',
     rotulo: 'Reuniões Remarcadas / Canceladas',
     icone: '🔁',
+    chaveMeta: 'reunioesRemarcadasCanceladasMeta',
     direcao: 'menor_melhor',
     agregacaoPeriodo: 'soma',
     explicacao: 'Soma da coluna "Reuniões Remarcadas / Canceladas" de todas as abas de colaborador.',
@@ -108,6 +97,7 @@ export const INDICADORES_TIME: DefinicaoIndicador[] = [
     chave: 'coberturaBasePercentual',
     rotulo: 'Cobertura de Base (%)',
     icone: '📡',
+    chaveMeta: 'coberturaBasePercentualMeta',
     direcao: 'maior_melhor',
     agregacaoPeriodo: 'soma',
     explicacao:
@@ -117,6 +107,7 @@ export const INDICADORES_TIME: DefinicaoIndicador[] = [
     chave: 'oportunidadesTotaisGeradas',
     rotulo: 'Oportunidades Totais Geradas',
     icone: '🟢',
+    chaveMeta: 'oportunidadesTotaisGeradasMeta',
     direcao: 'maior_melhor',
     agregacaoPeriodo: 'soma',
     explicacao:
@@ -126,7 +117,7 @@ export const INDICADORES_TIME: DefinicaoIndicador[] = [
     chave: 'totalContasCarteira',
     rotulo: 'Nº Total de Contas na Carteira',
     icone: '🏢',
-    chaveMeta: 'totalContasAdvbox',
+    chaveMeta: 'totalContasCarteiraMeta',
     direcao: 'maior_melhor',
     agregacaoPeriodo: 'ultimo_valor',
     explicacao: 'Soma da coluna "Nº Total de Contas na Carteira" de todas as abas de colaborador — é uma foto do tamanho da carteira, não um fluxo do mês.',
@@ -135,6 +126,7 @@ export const INDICADORES_TIME: DefinicaoIndicador[] = [
     chave: 'contasExcellent',
     rotulo: 'Contas Excellent',
     icone: '🟢',
+    chaveMeta: 'contasExcellentMeta',
     direcao: 'maior_melhor',
     agregacaoPeriodo: 'ultimo_valor',
     explicacao: 'Soma da coluna "Contas Excellent" (Health Score) de todas as abas de colaborador.',
@@ -143,6 +135,7 @@ export const INDICADORES_TIME: DefinicaoIndicador[] = [
     chave: 'contasGood',
     rotulo: 'Contas Good',
     icone: '🔵',
+    chaveMeta: 'contasGoodMeta',
     direcao: 'maior_melhor',
     agregacaoPeriodo: 'ultimo_valor',
     explicacao: 'Soma da coluna "Contas Good" (Health Score) de todas as abas de colaborador.',
@@ -151,6 +144,7 @@ export const INDICADORES_TIME: DefinicaoIndicador[] = [
     chave: 'contasPoor',
     rotulo: 'Contas Poor',
     icone: '🟡',
+    chaveMeta: 'contasPoorMeta',
     direcao: 'menor_melhor',
     agregacaoPeriodo: 'ultimo_valor',
     explicacao: 'Soma da coluna "Contas Poor" (Health Score) de todas as abas de colaborador.',
@@ -159,11 +153,23 @@ export const INDICADORES_TIME: DefinicaoIndicador[] = [
     chave: 'contasBad',
     rotulo: 'Contas Bad',
     icone: '🔴',
+    chaveMeta: 'contasBadMeta',
     direcao: 'menor_melhor',
     agregacaoPeriodo: 'ultimo_valor',
     explicacao: 'Soma da coluna "Contas Bad" (Health Score) de todas as abas de colaborador.',
   },
 ]
+
+// Uma meta por indicador, derivada 1:1 de INDICADORES_TIME — "tudo que
+// aparece em Resultado Mensal/Trimestral tem uma meta configurável em
+// Métricas Esperadas" (decisão confirmada).
+export const METAS_CONFIG: DefinicaoMeta[] = INDICADORES_TIME.map((def) => ({
+  chave: def.chaveMeta,
+  rotulo: `Meta — ${def.rotulo}`,
+  unidade: def.rotulo.includes('(%)') ? 'percentual' : 'quantidade',
+  direcao: def.direcao,
+  agregacaoPeriodo: def.agregacaoPeriodo,
+}))
 
 export function notaAgregacaoPeriodo(agregacao: AgregacaoPeriodo): string {
   if (agregacao === 'soma') return 'No trimestre/ano, este valor é a soma de todos os meses já fechados do período.'

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import SeletorMes from '@/components/gerencial/SeletorMes'
 import BotaoAtualizar from '@/components/gerencial/BotaoAtualizar'
+import BotaoFecharMes from '@/components/gerencial/BotaoFecharMes'
 import TabelaMetricasMes from '@/components/gerencial/TabelaMetricasMes'
 import { lerCache, salvarCache } from '@/agents/gerencial/cache-local'
 import type { MetricasColaboradorMes } from '@/types/gerencial'
@@ -67,12 +68,10 @@ export default function MetricasMesPage() {
 
   return (
     <div className="rounded-2xl bg-white p-6 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
-        <h2 className="text-lg font-semibold text-slate-900">📊 Métricas do Mês</h2>
-        <div className="flex items-center gap-3">
-          <SeletorMes mes={mes} onMudarMes={setMes} />
-          <BotaoAtualizar onAtualizar={atualizar} carregando={carregando} ultimaAtualizacao={ultimaAtualizacao} />
-        </div>
+      <h2 className="text-lg font-semibold text-slate-900">📊 Métricas do Mês</h2>
+      <div className="mt-3 flex flex-wrap items-center gap-3 pb-4">
+        <SeletorMes mes={mes} onMudarMes={setMes} />
+        <BotaoAtualizar onAtualizar={atualizar} carregando={carregando} ultimaAtualizacao={ultimaAtualizacao} />
       </div>
       <hr className="border-slate-200" />
 
@@ -83,6 +82,12 @@ export default function MetricasMesPage() {
       )}
       {aviso && <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">⚠️ {aviso}</p>}
       {erro && <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{erro}</p>}
+
+      {ultimaAtualizacao && !oficial && (
+        <div className="mt-4">
+          <BotaoFecharMes mes={mes} ano={ANO_ATUAL} onFechado={atualizar} />
+        </div>
+      )}
 
       <div className="mt-4">
         <TabelaMetricasMes porAba={porAba} />

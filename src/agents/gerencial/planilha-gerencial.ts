@@ -2,9 +2,19 @@ import 'server-only'
 import { google } from 'googleapis'
 import { MESES_COLUNAS } from '@/config/meses-colunas'
 import { normalizarLabel } from '@/agents/sheets-mapeamento'
-import { ABA_METAS, ABA_FECHAMENTOS, METAS_CONFIG } from '@/config/metas-gerencial'
+import { ABA_METAS, ABA_FECHAMENTOS, METAS_CONFIG, COLUNAS_TRIMESTRE, COLUNA_ANO } from '@/config/metas-gerencial'
 import { abasUnicas } from '@/agents/gerencial/leitura-abas'
-import type { MetricasColaboradorMes } from '@/types/gerencial'
+import type { MetricasColaboradorMes, NivelMeta } from '@/types/gerencial'
+
+export type Trimestre = 'Q1' | 'Q2' | 'Q3' | 'Q4'
+export type IdentificadorNivel = number | Trimestre | 'ano'
+
+export function trimestreDoMes(mes: number): Trimestre {
+  if (mes <= 3) return 'Q1'
+  if (mes <= 6) return 'Q2'
+  if (mes <= 9) return 'Q3'
+  return 'Q4'
+}
 
 const SPREADSHEET_ID = process.env.GOOGLE_GERENCIAL_SPREADSHEET_ID!
 
@@ -26,12 +36,37 @@ function indiceDaColuna(letra: string): number {
 }
 
 // ── Metas do Time ────────────────────────────────────────────────────────────
+// Cada meta pode ser configurada em 3 níveis (colunas diferentes na mesma
+// linha): Mês (C-N), Trimestre (O-R) ou Ano (S) — o líder escolhe o nível
+// ao preencher Métricas Esperadas. A leitura para exibição resolve em
+// cascata: valor do mês > valor do trimestre > valor do ano.
 
-export async function lerMetas(mes: number): Promise<Record<string, number | null>> {
+function colunaDoNivel(nivel: NivelMeta, identificador: IdentificadorNivel): string {
+  if (nivel === 'mes') return MESES_COLUNAS[identificador as number]
+  if (nivel === 'trimestre') return COLUNAS_TRIMESTRE[identificador as Trimestre]
+  return COLUNA_ANO
+}
+
+async function lerColunaA(sheets: ReturnType<typeof getSheets>) {
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `'${ABA_METAS}'!A:A`,
+    valueRenderOption: 'FORMATTED_VALUE',
+  })
+  const colunaA: string[] = (res.data.values ?? []).map((r) => String(r[0] ?? ''))
+  const indiceLabel = new Map<string, number>()
+  colunaA.forEach((label, i) => {
+    if (label) indiceLabel.set(normalizarLabel(label), i)
+  })
+  return indiceLabel
+}
+
+export async function lerMetasNivel(nivel: NivelMeta, identificador: IdentificadorNivel): Promise<Record<string, number | null>> {
+  const coluna = colunaDoNivel(nivel, identificador)
   const sheets = getSheets()
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: `'${ABA_METAS}'!A:${MESES_COLUNAS[mes]}`,
+    range: `'${ABA_METAS}'!A:${coluna}`,
     valueRenderOption: 'UNFORMATTED_VALUE',
   })
   const rows = (res.data.values ?? []) as unknown[][]
@@ -42,7 +77,7 @@ export async function lerMetas(mes: number): Promise<Record<string, number | nul
     if (label) indiceLabel.set(normalizarLabel(label), i)
   })
 
-  const idxCol = indiceDaColuna(MESES_COLUNAS[mes])
+  const idxCol = indiceDaColuna(coluna)
   const metas: Record<string, number | null> = {}
 
   for (const def of METAS_CONFIG) {
@@ -59,22 +94,10 @@ export async function lerMetas(mes: number): Promise<Record<string, number | nul
   return metas
 }
 
-export async function salvarMetas(mes: number, metas: Record<string, number>): Promise<void> {
+export async function salvarMetasNivel(nivel: NivelMeta, identificador: IdentificadorNivel, metas: Record<string, number>): Promise<void> {
   const sheets = getSheets()
-
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: SPREADSHEET_ID,
-    range: `'${ABA_METAS}'!A:A`,
-    valueRenderOption: 'FORMATTED_VALUE',
-  })
-  const colunaA: string[] = (res.data.values ?? []).map((r) => String(r[0] ?? ''))
-
-  const indiceLabel = new Map<string, number>()
-  colunaA.forEach((label, i) => {
-    if (label) indiceLabel.set(normalizarLabel(label), i)
-  })
-
-  const coluna = MESES_COLUNAS[mes]
+  const indiceLabel = await lerColunaA(sheets)
+  const coluna = colunaDoNivel(nivel, identificador)
   const updates: Array<{ range: string; values: [[number]] }> = []
 
   for (const def of METAS_CONFIG) {
@@ -95,11 +118,47 @@ export async function salvarMetas(mes: number, metas: Record<string, number>): P
   })
 }
 
+// Resolve a meta de UM mês em cascata: valor configurado pro mês > valor do
+// trimestre que contém esse mês > valor anual. Usado pelo Menu 1/3.
+export async function resolverMetasDoMes(mes: number): Promise<Record<string, number | null>> {
+  const [porMes, porTrimestre, porAno] = await Promise.all([
+    lerMetasNivel('mes', mes),
+    lerMetasNivel('trimestre', trimestreDoMes(mes)),
+    lerMetasNivel('ano', 'ano'),
+  ])
+  const resultado: Record<string, number | null> = {}
+  for (const def of METAS_CONFIG) {
+    resultado[def.chave] = porMes[def.chave] ?? porTrimestre[def.chave] ?? porAno[def.chave] ?? null
+  }
+  return resultado
+}
+
+// Resolve a meta de um PERÍODO (Q1..Q4 ou "ano") em cascata: valor
+// configurado direto pro período > agregação dos meses fechados (soma /
+// média / último valor, conforme cada métrica) > valor anual. Usado pelo
+// Menu 4.
+export async function resolverMetasDoPeriodo(
+  periodo: Trimestre | 'ano',
+  mesesFechados: number[]
+): Promise<Record<string, number | null>> {
+  const [porPeriodo, porAno, agregadoMeses] = await Promise.all([
+    periodo === 'ano' ? lerMetasNivel('ano', 'ano') : lerMetasNivel('trimestre', periodo),
+    lerMetasNivel('ano', 'ano'),
+    lerMetasPeriodo(mesesFechados),
+  ])
+  const resultado: Record<string, number | null> = {}
+  for (const def of METAS_CONFIG) {
+    resultado[def.chave] = porPeriodo[def.chave] ?? agregadoMeses[def.chave] ?? porAno[def.chave] ?? null
+  }
+  return resultado
+}
+
 // Consolida as metas ao longo de vários meses, respeitando a agregação
 // própria de cada meta (soma para fluxos, média para taxas, último valor
-// para fotos/estoques — ver METAS_CONFIG).
+// para fotos/estoques — ver METAS_CONFIG). Usada como um dos níveis do
+// fallback em resolverMetasDoPeriodo.
 export async function lerMetasPeriodo(meses: number[]): Promise<Record<string, number | null>> {
-  const metasPorMes = await Promise.all(meses.map((mes) => lerMetas(mes)))
+  const metasPorMes = await Promise.all(meses.map((mes) => lerMetasNivel('mes', mes)))
   const resultado: Record<string, number | null> = {}
 
   for (const def of METAS_CONFIG) {
