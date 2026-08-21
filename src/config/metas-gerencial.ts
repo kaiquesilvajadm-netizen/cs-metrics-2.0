@@ -109,7 +109,7 @@ export const INDICADORES_TIME: DefinicaoIndicador[] = [
     rotulo: 'Cobertura de Base (%)',
     icone: '📡',
     direcao: 'maior_melhor',
-    agregacaoPeriodo: 'ultimo_valor',
+    agregacaoPeriodo: 'soma',
     explicacao:
       'Soma de "Cobertura de Base — Total" de todos os colaboradores, dividida pela soma de "Nº Total de Contas na Carteira" de todos — média ponderada pelo tamanho de cada carteira, não a média simples das porcentagens individuais de cada colaborador.',
   },
