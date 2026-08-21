@@ -15,8 +15,12 @@ const SENHA_POR_ABA: Record<string, string> = {
   'Luana':         'ADVBOX3707',
   'Tércio ':       'ADVBOX4411',
   'Mari':          'ADVBOX3808',
-  'Pedro e Paulo': 'ADVBOX3909',
+  'Pedro ':        'ADVBOX3909',
   'Thais':         'ADVBOX3010',
+  'Luan':          'ADVBOX3111',
+  'Talita':        'ADVBOX3212',
+  'Stephanie':     'ADVBOX3313',
+  'Vanessa':       'ADVBOX3414',
 }
 
 export function senhaValidaPara(abaSheet: string, senhaDigitada: string): boolean {
