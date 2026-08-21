@@ -14,13 +14,16 @@ function queryDoNivel(nivel: NivelMeta, mes: number, trimestre: string): string 
 }
 
 export default function FormularioMetas() {
-  const [nivel, setNivel] = useState<NivelMeta>('mes')
-  const [mes, setMes] = useState(new Date().getMonth() + 1)
-  const [trimestre, setTrimestre] = useState<(typeof TRIMESTRES)[number]>('Q1')
+  const [nivel, setNivelInterno] = useState<NivelMeta>('mes')
+  const [mes, setMesInterno] = useState(new Date().getMonth() + 1)
+  const [trimestre, setTrimestreInterno] = useState<(typeof TRIMESTRES)[number]>('Q1')
   const [valores, setValores] = useState<Record<string, string>>({})
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [mensagem, setMensagem] = useState('')
+  // true assim que o usuário digita algo — impede trocar de aba/mês/trimestre
+  // sem avisar, pra não apagar em silêncio o que ele já preencheu.
+  const [sujo, setSujo] = useState(false)
 
   useEffect(() => {
     setCarregando(true)
@@ -34,9 +37,38 @@ export default function FormularioMetas() {
           novos[def.chave] = v === null || v === undefined ? '' : String(v)
         }
         setValores(novos)
+        setSujo(false)
       })
       .finally(() => setCarregando(false))
   }, [nivel, mes, trimestre])
+
+  function confirmarTroca(): boolean {
+    if (!sujo) return true
+    return window.confirm('Você preencheu campos aqui e ainda não salvou. Trocar agora vai descartar o que foi digitado. Trocar mesmo assim?')
+  }
+
+  function mudarNivel(novoNivel: NivelMeta) {
+    if (novoNivel === nivel) return
+    if (!confirmarTroca()) return
+    setNivelInterno(novoNivel)
+  }
+
+  function mudarMes(novoMes: number) {
+    if (novoMes === mes) return
+    if (!confirmarTroca()) return
+    setMesInterno(novoMes)
+  }
+
+  function mudarTrimestre(novoTrimestre: (typeof TRIMESTRES)[number]) {
+    if (novoTrimestre === trimestre) return
+    if (!confirmarTroca()) return
+    setTrimestreInterno(novoTrimestre)
+  }
+
+  function mudarValor(chave: string, valor: string) {
+    setSujo(true)
+    setValores((prev) => ({ ...prev, [chave]: valor }))
+  }
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault()
@@ -60,6 +92,7 @@ export default function FormularioMetas() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.erro ?? 'Falha ao salvar.')
       setMensagem('✅ Metas salvas com sucesso.')
+      setSujo(false)
     } catch (err) {
       setMensagem(err instanceof Error ? `❌ ${err.message}` : '❌ Erro desconhecido.')
     } finally {
@@ -77,7 +110,7 @@ export default function FormularioMetas() {
             <button
               key={n}
               type="button"
-              onClick={() => setNivel(n)}
+              onClick={() => mudarNivel(n)}
               className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
                 nivel === n ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800'
               }`}
@@ -90,7 +123,7 @@ export default function FormularioMetas() {
         {nivel === 'mes' && (
           <select
             value={mes}
-            onChange={(e) => setMes(Number(e.target.value))}
+            onChange={(e) => mudarMes(Number(e.target.value))}
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800"
           >
             {NOMES_MESES.map((nome, i) => (
@@ -104,7 +137,7 @@ export default function FormularioMetas() {
         {nivel === 'trimestre' && (
           <select
             value={trimestre}
-            onChange={(e) => setTrimestre(e.target.value as (typeof TRIMESTRES)[number])}
+            onChange={(e) => mudarTrimestre(e.target.value as (typeof TRIMESTRES)[number])}
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800"
           >
             <option value="Q1">Q1 (Jan-Mar)</option>
@@ -112,6 +145,12 @@ export default function FormularioMetas() {
             <option value="Q3">Q3 (Jul-Set)</option>
             <option value="Q4">Q4 (Out-Dez)</option>
           </select>
+        )}
+
+        {sujo && (
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+            ● Alterações não salvas
+          </span>
         )}
       </div>
 
@@ -133,7 +172,7 @@ export default function FormularioMetas() {
                 <label className="mb-1 block text-xs font-medium text-slate-700">{def.rotulo}</label>
                 <input
                   value={valores[def.chave] ?? ''}
-                  onChange={(e) => setValores((prev) => ({ ...prev, [def.chave]: e.target.value }))}
+                  onChange={(e) => mudarValor(def.chave, e.target.value)}
                   placeholder={def.unidade === 'percentual' ? 'Ex: 10 (para 10%)' : 'Ex: 950'}
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
                 />
