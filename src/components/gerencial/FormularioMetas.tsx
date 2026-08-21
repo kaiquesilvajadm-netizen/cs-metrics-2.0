@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { METAS_CONFIG } from '@/config/metas-gerencial'
 import { NOMES_MESES } from '@/config/meses-colunas'
+import { limparCache } from '@/agents/gerencial/cache-local'
 import type { NivelMeta } from '@/types/gerencial'
 
 const TRIMESTRES = ['Q1', 'Q2', 'Q3', 'Q4'] as const
@@ -91,8 +92,13 @@ export default function FormularioMetas() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.erro ?? 'Falha ao salvar.')
-      setMensagem('✅ Metas salvas com sucesso.')
+      setMensagem('✅ Metas salvas. Clique em Atualizar em Resultado Mensal/Trimestral pra ver os novos valores lá.')
       setSujo(false)
+      // Resultado Mensal/Trimestral têm cache local pra não perder dado ao
+      // trocar de menu — mas isso também guarda a meta antiga. Derruba os
+      // dois pra forçar um Atualizar novo e não mostrar meta desatualizada.
+      limparCache('resultado-mensal')
+      limparCache('resultado-trimestral')
     } catch (err) {
       setMensagem(err instanceof Error ? `❌ ${err.message}` : '❌ Erro desconhecido.')
     } finally {

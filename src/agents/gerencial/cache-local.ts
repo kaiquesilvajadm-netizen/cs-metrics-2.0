@@ -38,3 +38,12 @@ export function salvarCache<T>(chave: string, valor: T): void {
     // sessionStorage cheio ou indisponível — não é crítico, só perde o cache
   }
 }
+
+// Derruba um cache específico — usado quando algo muda por fora da própria
+// tela (ex: salvar uma meta nova em Métricas Esperadas invalida o cache de
+// Resultado Mensal/Trimestral, que dependem dela) pra não continuar
+// mostrando um valor antigo como se fosse atual.
+export function limparCache(chave: string): void {
+  if (typeof window === 'undefined') return
+  sessionStorage.removeItem(PREFIXO + chave)
+}
