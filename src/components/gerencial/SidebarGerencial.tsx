@@ -21,7 +21,7 @@ export default function SidebarGerencial() {
   }
 
   return (
-    <aside className="flex w-64 flex-shrink-0 flex-col gap-1 rounded-2xl bg-slate-900 p-4">
+    <aside className="print:hidden flex w-64 flex-shrink-0 flex-col gap-1 rounded-2xl bg-slate-900 p-4">
       <div className="mb-4 px-2">
         <span className="text-sm font-bold text-white">ADVBOX</span>
         <p className="text-xs text-slate-400">Painel Gerencial</p>

@@ -1,13 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import SeletorMes from '@/components/gerencial/SeletorMes'
 import BotaoAtualizar from '@/components/gerencial/BotaoAtualizar'
 import BotaoFecharMes from '@/components/gerencial/BotaoFecharMes'
 import CardIndicadorTime from '@/components/gerencial/CardIndicadorTime'
+import { INDICADORES_TIME } from '@/config/metas-gerencial'
+import { lerCache, salvarCache } from '@/agents/gerencial/cache-local'
 import type { IndicadorTime } from '@/types/gerencial'
 
 const ANO_ATUAL = new Date().getFullYear()
+const CHAVE_CACHE = 'resultado-mensal'
+
+interface CacheResultadoMensal {
+  mes: number
+  indicadores: IndicadorTime[]
+  oficial: boolean
+  aviso: string | null
+  abasComDado: number
+  totalAbas: number
+  ultimaAtualizacaoISO: string
+}
+
+function explicacaoDe(chave: string): string | undefined {
+  return INDICADORES_TIME.find((d) => d.chave === chave)?.explicacao
+}
 
 export default function ResultadoMensalPage() {
   const [mes, setMes] = useState(new Date().getMonth() + 1)
@@ -20,6 +37,18 @@ export default function ResultadoMensalPage() {
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState<Date | null>(null)
   const [erro, setErro] = useState<string | null>(null)
 
+  useEffect(() => {
+    const cache = lerCache<CacheResultadoMensal>(CHAVE_CACHE)
+    if (!cache) return
+    setMes(cache.mes)
+    setIndicadores(cache.indicadores)
+    setOficial(cache.oficial)
+    setAviso(cache.aviso)
+    setAbasComDado(cache.abasComDado)
+    setTotalAbas(cache.totalAbas)
+    setUltimaAtualizacao(new Date(cache.ultimaAtualizacaoISO))
+  }, [])
+
   async function atualizar() {
     setCarregando(true)
     setErro(null)
@@ -27,12 +56,22 @@ export default function ResultadoMensalPage() {
       const res = await fetch(`/api/gerencial/resultado-mensal?mes=${mes}&ano=${ANO_ATUAL}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.erro ?? 'Falha ao buscar dados.')
+      const agora = new Date()
       setIndicadores(data.indicadores)
       setOficial(data.oficial)
       setAviso(data.aviso ?? null)
       setAbasComDado(data.abasComDado)
       setTotalAbas(data.totalAbas)
-      setUltimaAtualizacao(new Date())
+      setUltimaAtualizacao(agora)
+      salvarCache<CacheResultadoMensal>(CHAVE_CACHE, {
+        mes,
+        indicadores: data.indicadores,
+        oficial: data.oficial,
+        aviso: data.aviso ?? null,
+        abasComDado: data.abasComDado,
+        totalAbas: data.totalAbas,
+        ultimaAtualizacaoISO: agora.toISOString(),
+      })
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Erro desconhecido.')
     } finally {
@@ -65,7 +104,7 @@ export default function ResultadoMensalPage() {
       {indicadores.length > 0 && (
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {indicadores.map((ind) => (
-            <CardIndicadorTime key={ind.chave} {...ind} />
+            <CardIndicadorTime key={ind.chave} {...ind} explicacao={explicacaoDe(ind.chave)} />
           ))}
         </div>
       )}

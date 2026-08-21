@@ -1,12 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import SeletorMes from '@/components/gerencial/SeletorMes'
 import BotaoAtualizar from '@/components/gerencial/BotaoAtualizar'
 import TabelaMetricasMes from '@/components/gerencial/TabelaMetricasMes'
+import { lerCache, salvarCache } from '@/agents/gerencial/cache-local'
 import type { MetricasColaboradorMes } from '@/types/gerencial'
 
 const ANO_ATUAL = new Date().getFullYear()
+const CHAVE_CACHE = 'metricas-mes'
+
+interface CacheMetricasMes {
+  mes: number
+  porAba: Record<string, MetricasColaboradorMes | null>
+  oficial: boolean
+  aviso: string | null
+  ultimaAtualizacaoISO: string
+}
 
 export default function MetricasMesPage() {
   const [mes, setMes] = useState(new Date().getMonth() + 1)
@@ -17,6 +27,18 @@ export default function MetricasMesPage() {
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState<Date | null>(null)
   const [erro, setErro] = useState<string | null>(null)
 
+  // Restaura o último resultado buscado nesta aba, pra não perder o dado ao
+  // sair e voltar pro menu (a busca em si continua só manual, via Atualizar).
+  useEffect(() => {
+    const cache = lerCache<CacheMetricasMes>(CHAVE_CACHE)
+    if (!cache) return
+    setMes(cache.mes)
+    setPorAba(cache.porAba)
+    setOficial(cache.oficial)
+    setAviso(cache.aviso)
+    setUltimaAtualizacao(new Date(cache.ultimaAtualizacaoISO))
+  }, [])
+
   async function atualizar() {
     setCarregando(true)
     setErro(null)
@@ -24,10 +46,18 @@ export default function MetricasMesPage() {
       const res = await fetch(`/api/gerencial/metricas-mes?mes=${mes}&ano=${ANO_ATUAL}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.erro ?? 'Falha ao buscar dados.')
+      const agora = new Date()
       setPorAba(data.porAba)
       setOficial(data.oficial)
       setAviso(data.aviso ?? null)
-      setUltimaAtualizacao(new Date())
+      setUltimaAtualizacao(agora)
+      salvarCache<CacheMetricasMes>(CHAVE_CACHE, {
+        mes,
+        porAba: data.porAba,
+        oficial: data.oficial,
+        aviso: data.aviso ?? null,
+        ultimaAtualizacaoISO: agora.toISOString(),
+      })
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Erro desconhecido.')
     } finally {

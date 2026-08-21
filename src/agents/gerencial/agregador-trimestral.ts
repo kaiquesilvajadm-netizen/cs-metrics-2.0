@@ -60,15 +60,16 @@ export function agregarPeriodo(
     let realizado: number | null
 
     if (def.chave === 'coberturaBasePercentual') {
-      // Mesma fórmula ponderada do mês único, só que o numerador soma ao
-      // longo dos meses fechados e o denominador usa a carteira do último
-      // mês fechado (foto, não fluxo) — consistente com totalContasCarteira.
+      // Mesma fórmula ponderada do mês único, mas no trimestre/ano os dois
+      // lados usam só o último mês fechado do período por colaborador (não
+      // soma o numerador entre os meses) — decisão confirmada: Cobertura de
+      // Base no período é uma foto do mês mais recente, não um acumulado.
       let numerador = 0
       let temNumerador = false
       let denominador = 0
       let temDenominador = false
       for (const aba of abas) {
-        const n = valorAgregadoPorAba(dadosPorAbaEMes, aba, mesesFechados, 'coberturaBaseTotal', 'soma')
+        const n = valorAgregadoPorAba(dadosPorAbaEMes, aba, mesesFechados, 'coberturaBaseTotal', 'ultimo_valor')
         if (n !== null) {
           numerador += n
           temNumerador = true
