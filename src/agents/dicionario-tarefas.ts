@@ -178,16 +178,6 @@ export const METRICAS_CHURN_VIA_TAREFAS: DefinicaoMetricaContagem[] = [
   },
 ]
 
-// Métricas marcadas como SEMANAL na coluna FREQUENCIA da planilha de instruções.
-// O toggle Semanal exibe SOMENTE estas; o toggle Mensal exibe todas.
-export const ROTULOS_SEMANAL = new Set<string>([
-  ...METRICAS_REUNIAO.map((d) => d.rotulo),
-  METRICA_REMARCADAS.rotulo,
-  METRICA_AGENDAMENTOS_TENTADOS.rotulo,
-  METRICA_OUTRAS_REUNIOES_CULTIVACAO.rotulo,
-  'Taxa de Efetivação de Reuniões (%)',
-])
-
 // Mapa rotulo → lista de nomes de tarefa (Compromisso) que entram na contagem.
 // Exibido no tooltip "?" de cada métrica no dashboard.
 export const FONTES_POR_ROTULO: Record<string, string[]> = Object.fromEntries(

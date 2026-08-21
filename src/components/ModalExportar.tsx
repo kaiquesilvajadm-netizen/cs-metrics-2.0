@@ -87,7 +87,7 @@ export default function ModalExportar({ linhasDashboard, onFechar }: Props) {
                 <p className="text-sm font-semibold text-amber-800">Dados já existentes em {nomeMes}</p>
                 <p className="mt-1 text-xs text-amber-700">
                   {avisoInfo.celulasExistentes} de {avisoInfo.total} métricas já possuem valores na aba <strong>{avisoInfo.aba}</strong> para este mês.
-                  As métricas semanais serão <strong>somadas</strong> e as mensais serão <strong>substituídas</strong>.
+                  Os valores existentes serão <strong>substituídos</strong> pelos novos.
                 </p>
                 <p className="mt-2 text-xs text-amber-700 font-medium">Deseja prosseguir mesmo assim?</p>
               </div>

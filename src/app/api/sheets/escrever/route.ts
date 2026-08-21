@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { google } from 'googleapis'
 import { encontrarPorNomeDisplay } from '@/config/colaboradores'
+import { senhaValidaPara } from '@/config/credenciais-colaboradores'
 import { MESES_COLUNAS } from '@/config/meses-colunas'
 import { MAPEAMENTO_METRICAS, normalizarLabel } from '@/agents/sheets-mapeamento'
-import { ROTULOS_SEMANAL } from '@/agents/dicionario-tarefas'
 import type { LinhaDashboard } from '@/agents/relatorio'
 
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID!
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
     // ── 1. Validar credenciais ───────────────────────────────────────────────
     const colaborador = encontrarPorNomeDisplay(nomeDisplay)
-    if (!colaborador || colaborador.senha !== senha) {
+    if (!colaborador || !senhaValidaPara(colaborador.abaSheet, senha)) {
       return NextResponse.json({ erro: 'Nome ou senha incorretos.' }, { status: 401 })
     }
 
@@ -60,7 +60,8 @@ export async function POST(request: Request) {
     })
     const celulasFormula: string[] = (resFormulas.data.values ?? []).map((r) => String(r[0] ?? ''))
 
-    // ── 5. Ler coluna do mês com valores numéricos (para somar) ─────────────
+    // ── 5. Ler coluna do mês com valores numéricos (para o aviso de dados
+    // já existentes — não entra mais em soma, tudo é sobrescrita) ───────────
     const resValores = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: `'${aba}'!${coluna}:${coluna}`,
@@ -77,9 +78,10 @@ export async function POST(request: Request) {
       if (label) labelParaLinha.set(normalizarLabel(label), i)
     })
 
-    // ── 7. Calcular updates com lógica SEMANAL / MENSAL ─────────────────────
-    // Semanal  → SOMA ao valor existente
-    // Mensal   → INSERE (sobrescreve valor não-fórmula)
+    // ── 7. Calcular updates — sempre SOBRESCREVE (última exportação vale) ────
+    // Ex.: no dia 10 o usuário lança 5 reuniões; no dia 20, ao retirar o
+    // relatório mensal novamente, o total real passou a ser 8 — o lançamento
+    // do dia 20 substitui o valor da célula por 8, não soma aos 5 anteriores.
     const updates: Array<{ range: string; values: [[number]] }> = []
     const celulasUsadas = new Set<string>()
     const linhasComDadosExistentes: number[] = []
@@ -99,16 +101,11 @@ export async function POST(request: Request) {
         if (celulasUsadas.has(cellRange)) continue
         celulasUsadas.add(cellRange)
 
-        const ehSemanal = ROTULOS_SEMANAL.has(metrica.rotulo)
+        // Rastrear células que já têm dados, só para o aviso de confirmação
         const valorAtual = valoresAtuais[linhaIdx] ?? 0
-
-        // Rastrear células que já têm dados para aviso de duplicata
         if (valorAtual !== 0) linhasComDadosExistentes.push(linhaIdx)
 
-        // Semanal: soma | Mensal: insere direto
-        const novoValor = ehSemanal ? valorAtual + metrica.valor : metrica.valor
-
-        updates.push({ range: cellRange, values: [[novoValor]] })
+        updates.push({ range: cellRange, values: [[metrica.valor]] })
       }
     }
 

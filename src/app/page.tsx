@@ -22,7 +22,6 @@ const FUNCOES = [
 ] as const
 
 type FuncaoId = (typeof FUNCOES)[number]['id']
-type ModoTarefas = 'mensal' | 'semanal'
 
 // ── Estado CHURN ──────────────────────────────────────────────────────────────
 interface EstadoChurn {
@@ -45,14 +44,14 @@ function kingVazio(): EstadoKing {
 }
 
 // ── Estado TAREFAS ────────────────────────────────────────────────────────────
+// Sempre mensal — o relatório de Tarefas não tem mais modo semanal.
 interface EstadoTarefas {
   metricasDaPlanilha: MetricaIndividual[]
-  modo: ModoTarefas
   erro: string | null
   aviso: string | null
 }
 function tarefasVazio(): EstadoTarefas {
-  return { metricasDaPlanilha: [], modo: 'mensal', erro: null, aviso: null }
+  return { metricasDaPlanilha: [], erro: null, aviso: null }
 }
 
 export default function Home() {
@@ -60,7 +59,6 @@ export default function Home() {
   const [churn, setChurn] = useState<EstadoChurn>(churnVazio)
   const [king, setKing] = useState<EstadoKing>(kingVazio)
   const [tarefas, setTarefas] = useState<EstadoTarefas>(tarefasVazio)
-  const [mostrarInfoModo, setMostrarInfoModo] = useState(false)
 
   const linhasBrutasTarefas = useRef<LinhaPlanilha[]>([])
 
@@ -103,7 +101,7 @@ export default function Home() {
     const abas = await importarPlanilha(arquivo)
     const linhas = limparTabela(abas[0]?.matriz ?? [], 'Compromisso')
     linhasBrutasTarefas.current = linhas
-    return calcularMetricasTarefas(linhas, tarefas.modo)
+    return calcularMetricasTarefas(linhas)
   }
 
   function aoReceberChurn(metricas: MetricaIndividual[]) {
@@ -123,19 +121,8 @@ export default function Home() {
   }
 
   function aoReceberTarefas(metricas: MetricaIndividual[]) {
-    const aviso = detectarPeriodoTarefas(linhasBrutasTarefas.current, tarefas.modo)
+    const aviso = detectarPeriodoTarefas(linhasBrutasTarefas.current)
     setTarefas((prev) => ({ ...prev, metricasDaPlanilha: metricas, erro: null, aviso }))
-  }
-
-  function mudarModoTarefas(novoModo: ModoTarefas) {
-    const linhas = linhasBrutasTarefas.current
-    const aviso = linhas.length > 0 ? detectarPeriodoTarefas(linhas, novoModo) : null
-    setTarefas((prev) => ({
-      ...prev,
-      modo: novoModo,
-      metricasDaPlanilha: linhas.length > 0 ? calcularMetricasTarefas(linhas, novoModo) : [],
-      aviso,
-    }))
   }
 
   return (
@@ -278,68 +265,34 @@ export default function Home() {
         {/* ── ABA TAREFAS ──────────────────────────────────────────────── */}
         {ehTarefas && (
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xl">{funcaoInfo.icone}</span>
-                <h2 className="text-lg font-semibold text-slate-900">{funcaoInfo.titulo}</h2>
-                <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
-                  {funcaoInfo.badge}
-                </span>
-              </div>
-
-              {/* Toggle MENSAL / SEMANAL */}
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1 rounded-full bg-slate-100 p-1">
-                  {(['mensal', 'semanal'] as ModoTarefas[]).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => mudarModoTarefas(m)}
-                      className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
-                        tarefas.modo === m
-                          ? 'bg-slate-900 text-white'
-                          : 'text-slate-500 hover:text-slate-800'
-                      }`}
-                    >
-                      {m === 'mensal' ? 'Mensal' : 'Semanal'}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setMostrarInfoModo((v) => !v)}
-                  className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-500 hover:bg-blue-100 hover:text-blue-700"
-                  aria-label="Sobre os modos Mensal e Semanal"
-                >
-                  ?
-                </button>
-              </div>
+            <div className="flex flex-wrap items-center gap-3 pb-4">
+              <span className="text-xl">{funcaoInfo.icone}</span>
+              <h2 className="text-lg font-semibold text-slate-900">{funcaoInfo.titulo}</h2>
+              <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                {funcaoInfo.badge}
+              </span>
             </div>
             <hr className="border-slate-200" />
 
-            {/* Info dos modos */}
-            {mostrarInfoModo && (
-              <div className="mt-4 flex gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-                <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
-                  ?
-                </div>
-                <div className="space-y-2 text-xs leading-relaxed text-blue-800">
-                  <p>
-                    <span className="font-semibold">Mensal:</span>{' '}
-                    Exibe todas as métricas do mês — reuniões, oportunidades, revisões e churn.
-                    Exige o relatório do mês completo (22 a 30 dias úteis) emitido na ADVBOX.
-                  </p>
-                  <p>
-                    <span className="font-semibold">Semanal:</span>{' '}
-                    Exibe apenas métricas de frequência semanal — reuniões realizadas, remarcadas/canceladas,
-                    agendamentos tentados e taxa de efetivação.
-                    Exige o relatório semanal (5 a 7 dias úteis) emitido na ADVBOX.
-                  </p>
-                </div>
+            {/* Instrução de uso */}
+            <div className="mt-4 flex gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                ?
               </div>
-            )}
+              <div className="text-xs leading-relaxed text-blue-800">
+                <span className="font-semibold">Como exportar os dados corretamente:</span>
+                {' '}acesse a <strong>ADVBOX → Tarefas</strong> e retire o relatório referente ao{' '}
+                <strong>MÊS COMPLETO</strong> (não utilize o período semanal). Selecione tudo{' '}
+                <kbd className="rounded bg-blue-100 px-1 py-0.5 font-mono font-semibold">Ctrl + A</kbd>,
+                {' '}copie{' '}
+                <kbd className="rounded bg-blue-100 px-1 py-0.5 font-mono font-semibold">Ctrl + C</kbd>
+                {' '}e cole em uma planilha em branco <strong>sem formatação</strong>{' '}
+                <kbd className="rounded bg-blue-100 px-1 py-0.5 font-mono font-semibold">Ctrl + Shift + V</kbd>.
+                {' '}Colar sem formatação remove links e células mescladas, garantindo que o sistema leia todos os dados corretamente.
+              </div>
+            </div>
 
-            {/* Aviso de planilha incompatível com o modo */}
+            {/* Aviso de planilha incompatível com o período mensal esperado */}
             {tarefas.aviso && (
               <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs text-amber-800">
                 {tarefas.aviso}
@@ -361,7 +314,7 @@ export default function Home() {
             {linhasTarefas.length > 0 && (
               <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
                 <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
-                  📋 RELATÓRIO TAREFAS · {tarefas.modo === 'mensal' ? 'MENSAL' : 'SEMANAL'}
+                  📋 RELATÓRIO TAREFAS · MENSAL
                 </span>
                 <BotaoExportar linhasDashboard={linhasTarefas} />
               </div>
