@@ -10,6 +10,15 @@ import type {
   StatusIndicador,
 } from '@/types/gerencial'
 
+// Chaves calculadas como razão ponderada entre dois outros campos (nunca
+// somadas nem lidas direto da soma genérica) — Cobertura de Base e Churn
+// são ambos "quantas contas X ÷ quantas contas no total", só que com
+// numeradores diferentes.
+const RAZOES_PONDERADAS: Partial<Record<ChaveMetrica, { numerador: ChaveMetrica; denominador: ChaveMetrica }>> = {
+  coberturaBasePercentual: { numerador: 'coberturaBaseTotal', denominador: 'totalContasCarteira' },
+  churnPercentual: { numerador: 'churnsRegistrados', denominador: 'totalContasCarteira' },
+}
+
 // razao = realizado / meta, sempre nesse sentido independente da direção —
 // quem decide se razao alta é boa ou ruim é a `direcao`. Evita inverter o
 // sinal do número e confundir a exibição; quem lê o `status` já sabe.
@@ -29,18 +38,21 @@ export function calcularStatus(realizado: number | null, meta: number | null, di
   return 'critico'
 }
 
-// Cobertura de Base do time = soma dos numeradores (contas atendidas em
-// cada aba) ÷ soma dos denominadores (tamanho de cada carteira) — média
-// ponderada, nunca média simples das % individuais (decisão confirmada).
-function coberturaBaseDoTime(dadosPorAba: Map<string, MetricasColaboradorMes>): number | null {
-  let numerador = 0
-  let denominador = 0
+// Soma dos numeradores de todas as abas ÷ soma dos denominadores — média
+// ponderada pelo tamanho de cada carteira, nunca média simples das %
+// individuais de cada colaborador (decisão confirmada).
+function razaoPonderadaDoTime(
+  dadosPorAba: Map<string, MetricasColaboradorMes>,
+  numerador: ChaveMetrica,
+  denominador: ChaveMetrica
+): number | null {
+  let n = 0
+  let d = 0
   for (const m of dadosPorAba.values()) {
-    numerador += m.coberturaBaseTotal ?? 0
-    denominador += m.totalContasCarteira ?? 0
+    n += m[numerador] ?? 0
+    d += m[denominador] ?? 0
   }
-  // Número percentual (3.6 = 3,6%), mesma convenção de coberturaBasePercentual.
-  return denominador > 0 ? (numerador / denominador) * 100 : null
+  return d > 0 ? (n / d) * 100 : null
 }
 
 // Agrega as 15 abas únicas do mês (nunca as 17 pessoas de COLABORADORES —
@@ -62,7 +74,7 @@ export function agregarTime(
 
     let temDado = false
     for (const def of INDICADORES_TIME) {
-      if (def.chave === 'coberturaBasePercentual') continue // recalculada à parte, nunca somada
+      if (RAZOES_PONDERADAS[def.chave]) continue // recalculada à parte, nunca somada
       const v = m[def.chave]
       if (v === null) continue
       temDado = true
@@ -71,10 +83,9 @@ export function agregarTime(
     if (temDado) abasComDado++
   }
 
-  const coberturaTime = coberturaBaseDoTime(dadosPorAba)
-
   const indicadores: IndicadorTime[] = INDICADORES_TIME.map((def) => {
-    const realizado = def.chave === 'coberturaBasePercentual' ? coberturaTime : somas[def.chave] ?? null
+    const razao = RAZOES_PONDERADAS[def.chave]
+    const realizado = razao ? razaoPonderadaDoTime(dadosPorAba, razao.numerador, razao.denominador) : somas[def.chave] ?? null
     const meta = def.chaveMeta ? metas[def.chaveMeta] ?? null : null
     const percentualAtingimento = realizado !== null && meta !== null && meta !== 0 ? (realizado / meta) * 100 : null
 

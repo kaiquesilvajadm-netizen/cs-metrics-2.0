@@ -69,12 +69,14 @@ function BarraComparativa({ rotulo, valor, percentual, cor }: { rotulo: string; 
   )
 }
 
-// Dashboard visual do Menu 4 (Resultado Trimestral): Cobertura de Base como
-// anel de progresso, e Contas Excellent/Good/Poor/Bad + Churns como barras
-// mostrando o quanto cada uma representa da Meta — Total de Contas na
-// ADVBOX (não do realizado — é a meta configurada no Menu 2).
+// Dashboard visual do Menu 4 (Resultado Trimestral): Cobertura de Base e
+// Churn como anéis de progresso (já são percentuais), e Contas
+// Excellent/Good/Poor/Bad como barras mostrando o quanto cada uma
+// representa da Meta — Total de Contas na ADVBOX (não do realizado — é a
+// meta configurada no Menu 2).
 export default function DashboardVisualTrimestral({ indicadores }: Props) {
   const coberturaBase = valorDe(indicadores, 'coberturaBasePercentual')
+  const churn = valorDe(indicadores, 'churnPercentual')
   const metaTotalAdvbox = indicadores.find((i) => i.chave === 'totalContasCarteira')?.meta ?? null
 
   const itens = [
@@ -82,7 +84,6 @@ export default function DashboardVisualTrimestral({ indicadores }: Props) {
     { rotulo: 'Contas Good', valor: valorDe(indicadores, 'contasGood'), cor: COR_GOOD },
     { rotulo: 'Contas Poor', valor: valorDe(indicadores, 'contasPoor'), cor: COR_POOR },
     { rotulo: 'Contas Bad', valor: valorDe(indicadores, 'contasBad'), cor: COR_BAD },
-    { rotulo: 'Nº Churns Registrados', valor: valorDe(indicadores, 'churnsRegistrados'), cor: COR_CHURN },
   ]
 
   return (
@@ -95,6 +96,13 @@ export default function DashboardVisualTrimestral({ indicadores }: Props) {
           cor="#0ea5e9"
           rotulo="Cobertura de Base"
           valorExibido={coberturaBase === null ? '—' : `${coberturaBase.toFixed(1)}%`}
+        />
+
+        <CirculoProgresso
+          percentual={churn ?? 0}
+          cor={COR_CHURN}
+          rotulo="Churn (% da base)"
+          valorExibido={churn === null ? '—' : `${churn.toFixed(1)}%`}
         />
 
         <div className="min-w-[280px] flex-1">

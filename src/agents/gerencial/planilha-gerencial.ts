@@ -201,6 +201,7 @@ const COLUNAS_FECHAMENTO = [
   'contasGood',
   'contasPoor',
   'contasBad',
+  'churnPercentual', // adicionado depois, no fim da lista de propósito — não mexe na posição das colunas já existentes em fechamentos antigos
   'fechadoEm',
 ] as const
 
@@ -232,6 +233,7 @@ function linhaParaMetrica(linha: unknown[]): { ano: number; mes: number; metrica
       mes,
       ano,
       churnsRegistrados: numeroOuNulo(obj.churnsRegistrados),
+      churnPercentual: numeroOuNulo(obj.churnPercentual),
       inadimplentesResgatados: numeroOuNulo(obj.inadimplentesResgatados),
       reunioesCultivacaoRealizadas: numeroOuNulo(obj.reunioesCultivacaoRealizadas),
       reuniaoPipeDeRisco: numeroOuNulo(obj.reuniaoPipeDeRisco),
@@ -268,6 +270,7 @@ function metricaParaLinha(m: MetricasColaboradorMes, fechadoEm: string): unknown
     m.contasGood ?? '',
     m.contasPoor ?? '',
     m.contasBad ?? '',
+    m.churnPercentual ?? '',
     fechadoEm,
   ]
 }

@@ -39,13 +39,14 @@ export interface DefinicaoIndicador {
 
 export const INDICADORES_TIME: DefinicaoIndicador[] = [
   {
-    chave: 'churnsRegistrados',
-    rotulo: 'Nº Churns Registrados',
+    chave: 'churnPercentual',
+    rotulo: 'Churn (%)',
     icone: '📉',
-    chaveMeta: 'churnsRegistradosMeta',
+    chaveMeta: 'churnPercentualMeta',
     direcao: 'menor_melhor',
     agregacaoPeriodo: 'soma',
-    explicacao: 'Soma da coluna "Nº Churns Registrados" de todas as abas de colaborador (valor já calculado pelo app na exportação da Planilha King).',
+    explicacao:
+      'Soma de "Nº Churns Registrados" de todos os colaboradores, dividida pela soma de "Nº Total de Contas na Carteira" de todos — média ponderada pelo tamanho de cada carteira, mesma lógica de Cobertura de Base (%). Não é a contagem crua de churns, é o percentual da base.',
   },
   {
     chave: 'inadimplentesResgatados',

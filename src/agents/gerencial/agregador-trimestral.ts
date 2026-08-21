@@ -10,6 +10,14 @@ import type {
   ResultadoPeriodoTime,
 } from '@/types/gerencial'
 
+// Chaves calculadas como razão ponderada (numerador somado ao longo dos
+// meses fechados, denominador = último mês fechado — é sempre uma foto,
+// nunca soma) — mesma lista de agregador-time.ts.
+const RAZOES_PONDERADAS: Partial<Record<ChaveMetrica, { numerador: ChaveMetrica; denominador: ChaveMetrica }>> = {
+  coberturaBasePercentual: { numerador: 'coberturaBaseTotal', denominador: 'totalContasCarteira' },
+  churnPercentual: { numerador: 'churnsRegistrados', denominador: 'totalContasCarteira' },
+}
+
 function ultimoMes(meses: number[]): number {
   return Math.max(...meses)
 }
@@ -42,6 +50,32 @@ function valorAgregadoPorAba(
   return agregacao === 'media' ? soma / valores.length : soma
 }
 
+function razaoPonderadaDoPeriodo(
+  dadosPorAbaEMes: Map<string, Map<number, MetricasColaboradorMes>>,
+  abas: string[],
+  mesesFechados: number[],
+  numerador: ChaveMetrica,
+  denominador: ChaveMetrica
+): number | null {
+  let n = 0
+  let temN = false
+  let d = 0
+  let temD = false
+  for (const aba of abas) {
+    const vn = valorAgregadoPorAba(dadosPorAbaEMes, aba, mesesFechados, numerador, 'soma')
+    if (vn !== null) {
+      n += vn
+      temN = true
+    }
+    const vd = valorAgregadoPorAba(dadosPorAbaEMes, aba, mesesFechados, denominador, 'ultimo_valor')
+    if (vd !== null) {
+      d += vd
+      temD = true
+    }
+  }
+  return temN && temD && d > 0 ? (n / d) * 100 : null
+}
+
 // Soma sobre as 15 abas únicas dos meses JÁ FECHADOS dentro do período
 // pedido (Q1=[1,2,3]…ano=[1..12]) — nunca recalcula ao vivo da planilha
 // operacional (decisão confirmada). Meses do período ainda não fechados
@@ -57,31 +91,11 @@ export function agregarPeriodo(
   const mesesFaltando = meses.filter((m) => !mesesFechados.includes(m))
 
   const indicadores: IndicadorTime[] = INDICADORES_TIME.map((def) => {
+    const razao = RAZOES_PONDERADAS[def.chave]
     let realizado: number | null
 
-    if (def.chave === 'coberturaBasePercentual') {
-      // Mesma fórmula ponderada do mês único: o numerador (contas atendidas)
-      // soma os 3 meses fechados do período, mas o denominador (tamanho da
-      // carteira) usa só o último mês fechado — decisão confirmada: Cobertura
-      // de Base é um acumulado do trimestre, Total de Contas é uma foto.
-      let numerador = 0
-      let temNumerador = false
-      let denominador = 0
-      let temDenominador = false
-      for (const aba of abas) {
-        const n = valorAgregadoPorAba(dadosPorAbaEMes, aba, mesesFechados, 'coberturaBaseTotal', 'soma')
-        if (n !== null) {
-          numerador += n
-          temNumerador = true
-        }
-        const d = valorAgregadoPorAba(dadosPorAbaEMes, aba, mesesFechados, 'totalContasCarteira', 'ultimo_valor')
-        if (d !== null) {
-          denominador += d
-          temDenominador = true
-        }
-      }
-      // Número percentual (3.6 = 3,6%), mesma convenção do mês único.
-      realizado = temNumerador && temDenominador && denominador > 0 ? (numerador / denominador) * 100 : null
+    if (razao) {
+      realizado = razaoPonderadaDoPeriodo(dadosPorAbaEMes, abas, mesesFechados, razao.numerador, razao.denominador)
     } else {
       let soma = 0
       let temValor = false

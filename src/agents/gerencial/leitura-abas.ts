@@ -86,11 +86,20 @@ function extrairMetricas(rows: unknown[][], abaSheet: string, mes: number, ano: 
       ? (coberturaBaseTotal / totalContasCarteira) * 100
       : null
 
+  const churnsRegistrados = porRotulo('Nº Churns Registrados')
+  // Churn como % da carteira (não contagem crua) — mesma lógica de
+  // coberturaBasePercentual, decisão confirmada.
+  const churnPercentual =
+    churnsRegistrados !== null && totalContasCarteira !== null && totalContasCarteira !== 0
+      ? (churnsRegistrados / totalContasCarteira) * 100
+      : null
+
   return {
     abaSheet,
     mes,
     ano,
-    churnsRegistrados: porRotulo('Nº Churns Registrados'),
+    churnsRegistrados,
+    churnPercentual,
     inadimplentesResgatados: porRotulo('Inadimplentes Resgatados'),
     reunioesCultivacaoRealizadas,
     reuniaoPipeDeRisco: porRotulo('Reunião de Pipe de Risco'),

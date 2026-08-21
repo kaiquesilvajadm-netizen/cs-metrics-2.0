@@ -7,6 +7,7 @@ export interface MetricasColaboradorMes {
   mes: number
   ano: number
   churnsRegistrados: number | null
+  churnPercentual: number | null // calculado: churnsRegistrados / totalContasCarteira, mesma lógica de coberturaBasePercentual
   inadimplentesResgatados: number | null
   reunioesCultivacaoRealizadas: number | null // calculado: soma de 7 sub-itens de reunião
   reuniaoPipeDeRisco: number | null
