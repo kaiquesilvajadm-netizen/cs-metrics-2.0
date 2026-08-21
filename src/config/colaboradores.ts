@@ -46,3 +46,13 @@ export const COLABORADORES: ColaboradorConfig[] = [
 export function encontrarPorNomeDisplay(nomeDisplay: string): ColaboradorConfig | undefined {
   return COLABORADORES.find((c) => c.nomeDisplay === nomeDisplay)
 }
+
+// Algumas abas são compartilhadas por 2 pessoas (ex: "Ana e Bruna", "Pedro
+// "). Usado pelo painel gerencial para rotular cada linha da tabela com
+// todos os nomes que dividem aquela aba, em vez de mostrar o mesmo dado
+// duas vezes como se fossem pessoas diferentes.
+export function nomeDisplayDaAba(abaSheet: string): string {
+  return COLABORADORES.filter((c) => c.abaSheet === abaSheet)
+    .map((c) => c.nomeDisplay)
+    .join(' & ')
+}
